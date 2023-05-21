@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import { EditVendorInputs, VendorLoginInput } from "../dto";
+import { CreateFoodInputs, EditVendorInputs, VendorLoginInput } from "../dto";
 import { findVendor } from "./AdminController";
 import { GenerateSignature, validatePassword } from "../utilities";
+import { Food } from "../models/Food";
 
 export const VendorLogin = async (req: Request, res: Response, next: NextFunction) => {
 
@@ -77,17 +78,59 @@ export const UpdateVenderService = async (req: Request, res: Response, next: Nex
 export const AddFood = async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     if (user) {
+        const { name, description, category, foodType, readyTime, price } = <CreateFoodInputs>req.body;
+        const vendor = await findVendor(user._id);
+        if (vendor) {
 
+            const files = req.files as [Express.Multer.File];
+            const images = files.map((file: Express.Multer.File) => file.originalname);
+
+            const createdFood = await Food.create({
+                venderId: vendor._id,
+                name: name,
+                description: description,
+                category: category,
+                foodType: foodType,
+                images: images,
+                readyTime: readyTime,
+                price: price,
+                rating: 0
+            })
+            vendor.foods.push(createdFood);
+            const result = await vendor.save();
+            return res.status(200).json(result);
+        }
     }
 
     return res.status(401).json({ message: 'Something went wrong to add food.' })
 }
 
-export const GetFood = async (req: Request, res: Response, next: NextFunction) => {
+export const GetFoods = async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     if (user) {
-
+        const food = await Food.find({ venderId: user._id });
+        if (food) {
+            return res.status(200).json(food);
+        }
     }
 
     return res.status(401).json({ message: 'Food information not found.' })
+}
+
+export const updateVenderCoverImage = async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user;
+    if (user) {
+        const vendor = await findVendor(user._id);
+        if (vendor) {
+
+            const files = req.files as [Express.Multer.File];
+            const images = files.map((file: Express.Multer.File) => file.originalname);
+
+            vendor.coverImage.push(...images);
+            const result = await vendor.save();
+            return res.status(200).json(result);
+        }
+    }
+
+    return res.status(401).json({ message: 'Something went wrong to add food.' })
 }
