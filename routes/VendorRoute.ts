@@ -19,6 +19,10 @@ const upload = multer({ storage: storage }).array('files', 10);
 
 router.post('/login', VendorLogin);
 
+router.get('/', (req: Request, res: Response, next: NextFunction) => {
+    res.json({ message: 'Vendor is working!' });
+})
+
 router.use(Authenticate);
 router.get('/profile', GetVenderProfile);
 router.patch('/profile', UpdateVenderProfile);
@@ -27,9 +31,5 @@ router.patch('/coverImage', upload, updateVenderCoverImage);
 
 router.post('/food', upload, AddFood);
 router.get('/foods', GetFoods);
-
-router.get('/', (req: Request, res: Response, next: NextFunction) => {
-    res.json({ message: 'Vendor is working!' });
-})
 
 export { router as VendorRoute }
