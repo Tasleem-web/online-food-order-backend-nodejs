@@ -8,7 +8,7 @@ export interface FoodDoc extends Document {
     category: string;
     foodType: string;
     readyTime: number;
-    price: string;
+    price: number;
     rating: number;
     images: [string]
 }
@@ -20,7 +20,7 @@ const foodSchema = new Schema({
     category: { type: String },
     foodType: { type: String, required: true },
     readyTime: { type: Number },
-    price: { type: String, required: true },
+    price: { type: Number, required: true },
     rating: { type: String },
     images: { type: [String] }
 }, {
