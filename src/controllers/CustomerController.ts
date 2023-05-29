@@ -202,12 +202,16 @@ export const CreateOrder = async (req: Request, res: Response, next: NextFunctio
 
         // calculate order amount
         const foods = await Food.find().where('_id').in(cart.map(item => item._id)).exec();
-
+        let vendorId;
         foods.map(food => {
             cart.map(({ _id, unit }) => {
                 if (food._id == _id) {
+                    vendorId = food.vendorId;
                     netAmount = netAmount + (food.price * unit);
                     cartItems.push({ food, unit });
+                } else {
+                    console.log(`${food._id} / ${_id}`);
+
                 }
             })
         })
@@ -215,13 +219,21 @@ export const CreateOrder = async (req: Request, res: Response, next: NextFunctio
         if (cartItems) {
             const currentOrder = await Order.create({
                 orderId: orderId,
+                vendorId: vendorId,
                 items: cartItems,
                 totalAmount: netAmount,
                 orderDate: new Date(),
                 paidThrough: 'COD',
                 paymentResponse: '',
-                orderStatus: 'waiting'
+                orderStatus: 'waiting',
+                remarks: '',
+                deliveryId: '',
+                appliedOffers: false,
+                offerId: null,
+                readyTime: 45,
             })
+            profile.cart = [] as any;
+            profile.orders.push(currentOrder);
 
             if (currentOrder) {
                 profile.orders.push(currentOrder);
@@ -253,4 +265,70 @@ export const GetOrderById = async (req: Request, res: Response, next: NextFuncti
         return res.status(200).json({ result: order })
     }
     return res.status(400).json({ message: "Error with get order by ID." });
+}
+
+export const AddToCart = async (req: Request, res: Response, next: NextFunction) => {
+    const customer = req.user;
+
+    if (customer) {
+        const profile = await Customer.findById(customer._id).populate('cart.food');
+        let cartItems = [];
+        const { _id, unit } = <OrderInputs>req.body;
+
+        const food = await Food.findById(_id);
+        if (food && profile) {
+            cartItems = profile.cart;
+            if (cartItems.length) {
+                // check and update unit
+                let existFoodItem = cartItems.filter(item => item.food._id == _id);
+                if (existFoodItem.length) {
+                    const index = cartItems.indexOf(existFoodItem[0]);
+                    if (unit > 0) {
+                        cartItems[index] = { food, unit };
+                    } else {
+                        cartItems.splice(index, 1);
+                    }
+                } else {
+                    cartItems.push({ food, unit });
+                }
+            } else {
+                // add new item to cart
+                cartItems.push({ food, unit });
+            }
+        }
+        if (cartItems) {
+            profile.cart = cartItems as any;
+            const cartResult = await profile.save();
+            return res.status(200).json(cartResult.cart);
+        }
+    }
+    return res.status(400).json({ message: "Unable to create Cart." });
+}
+
+export const GetCart = async (req: Request, res: Response, next: NextFunction) => {
+
+    const customer = req.user;
+    if (customer) {
+        const profile = await Customer.findById(customer._id).populate('cart.food');
+        if (profile) {
+            return res.status(200).json(profile.cart);
+        }
+    }
+
+    return res.status(400).json({ message: "Cart is empty." });
+}
+
+export const DeleteCart = async (req: Request, res: Response, next: NextFunction) => {
+    const customer = req.user;
+
+    if (customer) {
+        const profile = await Customer.findById(customer._id).populate('cart.food');
+        if (profile) {
+            profile.cart = [] as any;
+            const cartResult = await profile.save();
+            return res.status(200).json(cartResult);
+        }
+    }
+
+    return res.status(400).json({ message: "Cart already is empty." });
 }
