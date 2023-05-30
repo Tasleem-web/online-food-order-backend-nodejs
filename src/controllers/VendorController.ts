@@ -164,7 +164,7 @@ export const ProcessOrder = async (req: Request, res: Response, next: NextFuncti
     const orderId = req.params.id;
     const { status, remarks, time } = req.body;
     if (orderId) {
-        const order = await Order.findById(orderId).populate('food');
+        const order = await Order.findById(orderId).populate('items.food');
         order.orderStatus = status;
         order.remarks = remarks;
         time && (order.readyTime = time);
