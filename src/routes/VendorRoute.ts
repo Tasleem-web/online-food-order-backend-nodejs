@@ -1,5 +1,19 @@
 import express, { Request, Response, NextFunction } from "express";
-import { AddFood, GetCurrentOrders, GetFoods, GetOrderDetails, GetVenderProfile, ProcessOrder, UpdateVenderProfile, UpdateVenderService, VendorLogin, updateVenderCoverImage } from "../controllers";
+import {
+    AddFood,
+    AddOffer,
+    EditOffer,
+    GetCurrentOrders,
+    GetFoods,
+    GetOffers,
+    GetOrderDetails,
+    GetVenderProfile,
+    ProcessOrder,
+    UpdateVenderProfile,
+    UpdateVenderService,
+    VendorLogin,
+    updateVenderCoverImage
+} from "../controllers";
 import { Authenticate } from "../middlewares";
 import multer from "multer";
 
@@ -7,7 +21,8 @@ const router = express.Router();
 
 // Multer configuration
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
+    destination: function (req,
+        file, cb) {
         cb(null, 'uploads/');
     },
     filename: function (req, file, cb) {
@@ -36,5 +51,10 @@ router.get('/foods', GetFoods);
 router.get('/orders', GetCurrentOrders);
 router.put('/order/:id/process', ProcessOrder);
 router.get('/order/:id', GetOrderDetails);
+
+// Offers
+router.get('/offers', GetOffers);
+router.post('/offer', AddOffer);
+router.put('/offer/:id', EditOffer);
 
 export { router as VendorRoute }
